@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      dockerfile_inline: |
+        FROM composer:2 AS build
+        WORKDIR /app
+        COPY composer.json composer.lock ./
+        RUN composer install --no-dev --optimize-autoloader --no-scripts --no-progress
+
+        FROM php:8.4-cli
+        WORKDIR /app
+        COPY --from=build /app/vendor ./vendor
+        COPY src ./src
+        EXPOSE 8000
+        CMD ["php", "-S", "0.0.0.0:8000", "-t", "src"]
+    container_name: basic-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
+      - ./.env:/app/.env

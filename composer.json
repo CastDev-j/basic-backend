@@ -1,0 +1,12 @@
+{
+    "name": "admin/basic-backend",
+    "authors": [
+        {
+            "name": "CastDev",
+            "email": "23031429@itcelaya.edu.mx"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
+}
