@@ -41,7 +41,7 @@ try {
             if ($id === null) {
                 throw new \InvalidArgumentException('ID requerido en la URL');
             }
-            $result = $service->updateUser($id, $input['name'] ?? '', $input['email'] ?? '');
+            $result = $service->updateUser($id, $input);
             break;
 
         case 'DELETE':

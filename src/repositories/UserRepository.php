@@ -67,17 +67,20 @@ class UserRepository
         return (int) $this->pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
     }
 
-    public function update(User $user): bool
+    public function updateFields(string $id, array $fields, array $values): bool
     {
-        $sql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
+        $sql = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = ?';
+        $values[] = $id;
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$user->getName(), $user->getEmail(), $user->getId()]);
+        return $stmt->execute($values);
     }
 
     public function delete(string $id): bool
     {
         $sql = "DELETE FROM users WHERE id = ?";
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$id]);
+        $stmt->execute([$id]);
+
+        return $stmt->rowCount() > 0;
     }
 }

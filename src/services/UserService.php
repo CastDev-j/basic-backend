@@ -73,24 +73,46 @@ class UserService
         ];
     }
 
-    public function updateUser(string $id, string $name, string $email): array
+    public function updateUser(string $id, array $data): array
     {
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return ['success' => false, 'message' => 'Email inválido'];
-        }
-
-        $existing = $this->repository->findById($id);
-
-        if (!$existing) {
+        if (!$this->repository->findById($id)) {
             return ['success' => false, 'message' => 'Usuario no encontrado'];
         }
 
-        $user = new User($name, $email, $id, $existing->getCreatedAt());
-        $updated = $this->repository->update($user);
+        $fields = [];
+        $values = [];
 
-        return $updated
-            ? ['success' => true, 'message' => 'Usuario actualizado', 'user' => $user->toArray()]
-            : ['success' => false, 'message' => 'Error al actualizar'];
+        if (isset($data['name'])) {
+            if (strlen($data['name']) < 3) {
+                return ['success' => false, 'message' => 'Nombre muy corto'];
+            }
+            $fields[] = 'name = ?';
+            $values[] = $data['name'];
+        }
+
+        if (isset($data['email'])) {
+            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+                return ['success' => false, 'message' => 'Email inválido'];
+            }
+
+            $existing = $this->repository->findByEmail($data['email']);
+            if ($existing && $existing->getId() !== $id) {
+                return ['success' => false, 'message' => 'Email ya registrado'];
+            }
+
+            $fields[] = 'email = ?';
+            $values[] = $data['email'];
+        }
+
+        if (!$fields) {
+            return ['success' => false, 'message' => 'No hay campos para actualizar'];
+        }
+
+        if (!$this->repository->updateFields($id, $fields, $values)) {
+            return ['success' => false, 'message' => 'Error al actualizar'];
+        }
+
+        return ['success' => true, 'message' => 'Usuario actualizado', 'user' => $this->repository->findById($id)->toArray()];
     }
 
     public function deleteUser(string $id): array
