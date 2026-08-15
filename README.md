@@ -64,9 +64,13 @@ Si tienes un cliente de PostgreSQL local, puedes conectarte a `localhost:5432` c
 
 `GET /users` y `GET /products` aceptan paginación por query params: `?page=2&per_page=10` (por defecto `page=1`, `per_page=10`, máx. 100).
 
+## Seguridad
+
+Todos los requests pasan por el front controller (`src/index.php` como router del servidor PHP embebido). Solo se responden las rutas definidas; cualquier intento de acceder a archivos internos (`/Logger.php`, `/db/Database.php`, `/logs/app.log`, traversal con `..`, extensiones como `.php`/`.log`) recibe `404`.
+
 ## Logs
 
-Cada request queda registrado en `src/logs/app.log` con nivel (`SUCCESS`, `WARN`, `ERROR`), método, ruta, código de estado y mensaje. Los errores no capturados se registran con su stack trace completo.
+Cada request queda registrado en `src/logs/app.log` con nivel (`SUCCESS`, `WARN`, `ERROR`), método, ruta, código de estado y mensaje. Los intentos de acceso bloqueados se registran como `Ruta bloqueada`; los errores no capturados se registran con su stack trace completo. El archivo de logs es privado: no se sirve vía HTTP.
 
 ## Bajar
 

@@ -15,59 +15,72 @@ header('Content-Type: application/json');
 
 Logger::init(__DIR__ . '/logs/app.log');
 
-$userService = new UserService();
-$productService = new ProductService();
-$method = $_SERVER['REQUEST_METHOD'];
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
-$path = rtrim($path, '/');
-$segments = array_values(array_filter(explode('/', $path)));
-$resource = $segments[0] ?? '';
-$id = isset($segments[1]) && $segments[1] !== '' ? $segments[1] : null;
-$input = json_decode(file_get_contents('php://input'), true) ?? [];
+$request = ['method' => '?', 'path' => '/'];
 
 try {
-    $dispatched = match ($resource) {
-        'users' => handleResource($method, $id, $input, $userService),
-        'products' => handleResource($method, $id, $input, $productService),
+    $request = parseRequest();
+
+    if (isBlockedPath($request['path'])) {
+        respond($request, 404, ['success' => false, 'message' => 'Ruta bloqueada'], 'Ruta bloqueada');
+    }
+
+    $service = match ($request['resource']) {
+        'users' => new UserService(),
+        'products' => new ProductService(),
         default => null,
     };
 
-    if ($dispatched === null) {
-        logRequest(404, $method, $path, 'Ruta no encontrada');
-        http_response_code(404);
-        echo json_encode(['success' => false, 'message' => 'Ruta no encontrada']);
-        exit;
+    if ($service === null) {
+        respond($request, 404, ['success' => false, 'message' => 'Ruta no encontrada'], 'Ruta no encontrada');
     }
 
-    [$status, $result] = $dispatched;
-    $message = $result['message'] ?? json_encode($result);
-    logRequest($status, $method, $path, $message);
-
-    http_response_code($status);
-    echo json_encode($result);
+    [$status, $result] = handleResource($request, $service);
+    respond($request, $status, $result);
 } catch (\Throwable $e) {
-    Logger::error("{$method} {$path} 500 - " . $e->getMessage() . PHP_EOL . $e->getTraceAsString());
+    Logger::error("{$request['method']} {$request['path']} 500 - " . $e->getMessage() . PHP_EOL . $e->getTraceAsString());
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }
 
-function handleResource(string $method, ?string $id, array $input, object $service): ?array
+function parseRequest(): array
 {
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    $path = rtrim(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/', '/');
+    $segments = array_values(array_filter(explode('/', $path)));
+
+    return [
+        'method' => $method,
+        'path' => $path === '' ? '/' : $path,
+        'resource' => $segments[0] ?? '',
+        'id' => isset($segments[1]) && $segments[1] !== '' ? $segments[1] : null,
+        'input' => json_decode(file_get_contents('php://input'), true) ?? [],
+        'page' => max(1, (int) ($_GET['page'] ?? 1)),
+        'perPage' => min(100, max(1, (int) ($_GET['per_page'] ?? 10))),
+    ];
+}
+
+function isBlockedPath(string $path): bool
+{
+    return str_contains($path, '..')
+        || (bool) preg_match('/\.(php|log|env|json|md|lock)$/i', $path);
+}
+
+function handleResource(array $request, object $service): array
+{
+    $method = $request['method'];
+    $id = $request['id'];
+    $input = $request['input'];
+
     switch ($method) {
         case 'GET':
             $result = $id !== null
                 ? $service->getById($id)
-                : $service->getAll(
-                    max(1, (int) ($_GET['page'] ?? 1)),
-                    min(100, max(1, (int) ($_GET['per_page'] ?? 10)))
-                );
-
-            return [($result['success'] ?? false) ? 200 : 400, $result];
+                : $service->getAll($request['page'], $request['perPage']);
+            break;
 
         case 'POST':
             $result = $service->create($input);
-
-            return [($result['success'] ?? false) ? 201 : 400, $result];
+            break;
 
         case 'PUT':
         case 'PATCH':
@@ -75,20 +88,32 @@ function handleResource(string $method, ?string $id, array $input, object $servi
                 throw new \InvalidArgumentException('ID requerido en la URL');
             }
             $result = $service->update($id, $input);
-
-            return [($result['success'] ?? false) ? 200 : 400, $result];
+            break;
 
         case 'DELETE':
             if ($id === null) {
                 throw new \InvalidArgumentException('ID requerido en la URL');
             }
             $result = $service->delete($id);
-
-            return [($result['success'] ?? false) ? 200 : 400, $result];
+            break;
 
         default:
             return [405, ['success' => false, 'message' => 'Método no permitido']];
     }
+
+    $status = ($result['success'] ?? false) ? ($method === 'POST' ? 201 : 200) : 400;
+
+    return [$status, $result];
+}
+
+function respond(array $request, int $status, array $body, ?string $logMessage = null): never
+{
+    $message = $logMessage ?? ($body['message'] ?? json_encode($body));
+    logRequest($status, $request['method'], $request['path'], $message);
+
+    http_response_code($status);
+    echo json_encode($body);
+    exit;
 }
 
 function logRequest(int $status, string $method, string $path, string $message): void

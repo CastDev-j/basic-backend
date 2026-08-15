@@ -15,7 +15,7 @@ services:
         COPY --from=build /app/vendor ./vendor
         COPY src ./src
         EXPOSE 8000
-        CMD ["php", "-S", "0.0.0.0:8000", "-t", "src"]
+        CMD ["php", "-S", "0.0.0.0:8000", "src/index.php"]
     container_name: basic-backend
     depends_on:
       db:
