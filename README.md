@@ -49,13 +49,13 @@ Si tienes un cliente de PostgreSQL local, puedes conectarte a `localhost:5432` c
 
 ## Endpoints
 
-| Método | Ruta | Acción |
-|---|---|---|
-| GET | `/users` | Listar usuarios |
-| GET | `/users/{id}` | Obtener un usuario |
-| POST | `/users` | Crear usuario (`{name, email}`) |
+| Método    | Ruta          | Acción                                                                            |
+| --------- | ------------- | --------------------------------------------------------------------------------- |
+| GET       | `/users`      | Listar usuarios                                                                   |
+| GET       | `/users/{id}` | Obtener un usuario                                                                |
+| POST      | `/users`      | Crear usuario (`{name, email}`)                                                   |
 | PUT/PATCH | `/users/{id}` | Actualizar usuario (envía solo los campos a cambiar: `{name}`, `{email}` o ambos) |
-| DELETE | `/users/{id}` | Eliminar usuario |
+| DELETE    | `/users/{id}` | Eliminar usuario                                                                  |
 
 `GET /users` acepta paginación por query params: `?page=2&per_page=10` (por defecto `page=1`, `per_page=10`, máx. 100).
 
