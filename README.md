@@ -49,15 +49,24 @@ Si tienes un cliente de PostgreSQL local, puedes conectarte a `localhost:5432` c
 
 ## Endpoints
 
-| Método    | Ruta          | Acción                                                                            |
-| --------- | ------------- | --------------------------------------------------------------------------------- |
-| GET       | `/users`      | Listar usuarios                                                                   |
-| GET       | `/users/{id}` | Obtener un usuario                                                                |
-| POST      | `/users`      | Crear usuario (`{name, email}`)                                                   |
-| PUT/PATCH | `/users/{id}` | Actualizar usuario (envía solo los campos a cambiar: `{name}`, `{email}` o ambos) |
-| DELETE    | `/users/{id}` | Eliminar usuario                                                                  |
+| Método    | Ruta             | Acción                                                                                         |
+| --------- | ---------------- | ---------------------------------------------------------------------------------------------- |
+| GET       | `/users`         | Listar usuarios                                                                                |
+| GET       | `/users/{id}`    | Obtener un usuario                                                                             |
+| POST      | `/users`         | Crear usuario (`{name, email}`)                                                                |
+| PUT/PATCH | `/users/{id}`    | Actualizar usuario (envía solo los campos a cambiar: `{name}`, `{email}` o ambos)              |
+| DELETE    | `/users/{id}`    | Eliminar usuario                                                                               |
+| GET       | `/products`      | Listar productos                                                                               |
+| GET       | `/products/{id}` | Obtener un producto                                                                            |
+| POST      | `/products`      | Crear producto (`{name, price, stock}`)                                                        |
+| PUT/PATCH | `/products/{id}` | Actualizar producto (envía solo los campos a cambiar: `{name}`, `{price}`, `{stock}` o varios) |
+| DELETE    | `/products/{id}` | Eliminar producto                                                                              |
 
-`GET /users` acepta paginación por query params: `?page=2&per_page=10` (por defecto `page=1`, `per_page=10`, máx. 100).
+`GET /users` y `GET /products` aceptan paginación por query params: `?page=2&per_page=10` (por defecto `page=1`, `per_page=10`, máx. 100).
+
+## Logs
+
+Cada request queda registrado en `src/logs/app.log` con nivel (`SUCCESS`, `WARN`, `ERROR`), método, ruta, código de estado y mensaje. Los errores no capturados se registran con su stack trace completo.
 
 ## Bajar
 

@@ -14,8 +14,11 @@ class UserService
         $this->repository = new UserRepository();
     }
 
-    public function register(string $name, string $email): array
+    public function create(array $data): array
     {
+        $name = $data['name'] ?? '';
+        $email = $data['email'] ?? '';
+
         $existing = $this->repository->findByEmail($email);
 
         if ($existing) {
@@ -44,7 +47,7 @@ class UserService
         return ['success' => false, 'message' => 'Error al registrar'];
     }
 
-    public function getProfile(string $id): array
+    public function getById(string $id): array
     {
         $user = $this->repository->findById($id);
 
@@ -53,7 +56,7 @@ class UserService
             : ['success' => false, 'message' => 'Usuario no encontrado'];
     }
 
-    public function getAllUsers(int $page = 1, int $perPage = 10): array
+    public function getAll(int $page = 1, int $perPage = 10): array
     {
         $total = $this->repository->count();
         $offset = ($page - 1) * $perPage;
@@ -73,7 +76,7 @@ class UserService
         ];
     }
 
-    public function updateUser(string $id, array $data): array
+    public function update(string $id, array $data): array
     {
         if (!$this->repository->findById($id)) {
             return ['success' => false, 'message' => 'Usuario no encontrado'];
@@ -115,7 +118,7 @@ class UserService
         return ['success' => true, 'message' => 'Usuario actualizado', 'user' => $this->repository->findById($id)->toArray()];
     }
 
-    public function deleteUser(string $id): array
+    public function delete(string $id): array
     {
         $deleted = $this->repository->delete($id);
 
